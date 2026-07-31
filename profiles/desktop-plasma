@@ -1,0 +1,9 @@
+# desktop-plasma -- the same machine with KDE Plasma instead of Xfce.
+#
+# 3.71 GB against desktop's 2.89 GB. You are buying a Wayland-native desktop
+# for 820 MB, which is a fair trade on modern hardware -- Xfce is still
+# X11-first. Pick on that, not on the size.
+00-core
+10-shell
+30-desktop-plasma
+40-flatpak

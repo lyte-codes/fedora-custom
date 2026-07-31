@@ -1,12 +1,12 @@
-# desktop -- a normal PC, and nothing more.
+# desktop -- lean, headed Fedora. The default.
 #
-# KDE Plasma on Wayland, a terminal worth using, and Firefox as a Flatpak.
-# No office suite, no mail client, no media player, no games: anything else
-# you want is `flatpak install`, which keeps it out of the base image.
+# Xfce, not Plasma: measured 2.89 GB against Plasma's 3.71 GB for the same
+# capability. If you want Plasma, build `desktop-plasma` -- it is one word,
+# which is the whole point of profiles.
 #
-# dnf is present (it is Fedora) but note it does NOT persist on a bootc host.
-# For an rpm with no Flatpak, use `rpm-ostree install` and reboot.
+# Firefox arrives as a Flatpak on first boot and updates itself daily, so it
+# is not in this image at all. Anything else you want is `flatpak install`.
 00-core
 10-shell
-30-desktop-plasma
+30-desktop-xfce
 40-flatpak

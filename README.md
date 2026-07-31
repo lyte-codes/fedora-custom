@@ -14,11 +14,23 @@ is the main way Fedora systems get quietly fat.
 **Modular** means one concern per file in `modules/`, and a named preset in
 `profiles/` that says which ones to use:
 
+| Profile | Headed | Size | What it is |
+|---|---|---|---|
+| `desktop` | yes | 2.89 GB | **the default** — Xfce + Firefox |
+| `desktop-plasma` | yes | 3.71 GB | same, with KDE Plasma |
+| `minimal` | no | 1.98 GB | boots, networks, takes ssh |
+| `normal` | no | 2.13 GB | + a terminal worth using |
+| `max` | no | 2.38 GB | + compilers and containers |
+
 ```bash
-podman build --build-arg PROFILE=minimal .   # boots, networks, ssh. Nothing else.
-podman build --build-arg PROFILE=normal  .   # + a terminal worth using (default)
-podman build --build-arg PROFILE=max     .   # + everything in modules/
+podman build --build-arg PROFILE=desktop .          # the default
+podman build --build-arg PROFILE=desktop-plasma .   # Plasma instead of Xfce
 ```
+
+Stock `fedora-bootc:44` is 1.98 GB, so a full working desktop costs **910 MB
+on top of Fedora itself**. For comparison, installing the `xfce-desktop-environment`
+or `kde-desktop` group instead of naming packages individually would have been
+several gigabytes more.
 
 **Turning an app off is deleting a line from a profile.** Adding a capability
 is adding a file to `modules/` and a line to whichever profiles want it. You

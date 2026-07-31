@@ -13,9 +13,9 @@ on:
     inputs:
       profile:
         description: 'Preset to build'
-        default: 'normal'
+        default: 'desktop'
         type: choice
-        options: [minimal, normal, max, desktop, desktop-xfce]
+        options: [desktop, desktop-plasma, minimal, normal, max]
       modules:
         description: 'Override the profile entirely (space separated, optional)'
         default: ''
@@ -28,9 +28,10 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE: ${{ github.repository }}
-  # The one profile allowed to claim :latest. Change this if your daily driver
-  # stops being `normal` -- e.g. once there is a `desktop` profile.
-  CANONICAL_PROFILE: normal
+  # The one profile allowed to claim :latest -- i.e. what a running machine
+  # gets from `bootc upgrade`. This is the daily driver, so it is the headed
+  # one; the headless profiles are built on demand and never touch :latest.
+  CANONICAL_PROFILE: desktop
 
 jobs:
   build:
@@ -56,7 +57,7 @@ jobs:
       - name: Build image
         id: build
         run: |
-          PROFILE="${{ github.event.inputs.profile || 'normal' }}"
+          PROFILE="${{ github.event.inputs.profile || 'desktop' }}"
           MODULES="${{ github.event.inputs.modules || '' }}"
           DRIVERS="${{ github.event.inputs.drivers || '' }}"
           echo "profile: $PROFILE"
