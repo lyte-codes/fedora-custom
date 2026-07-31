@@ -1,7 +1,12 @@
-# max -- everything in the repo. Every module, switched on.
+# max -- the top of the HEADLESS ladder. minimal < normal < max.
 #
-# Not "the best one" -- the biggest one. If you are not going to compile
-# anything on this machine, `normal` boots faster and updates quicker.
+# Not "every module in the repo": the desktop profiles are a separate track,
+# and 30-desktop-plasma / 30-desktop-xfce are alternatives to each other, so
+# there is no coherent build with all of them. If you want a GUI you want
+# `desktop` or `desktop-xfce`, not this.
+#
+# Also not "the best one" -- just the biggest headless one. If you are not
+# compiling on this machine, `normal` boots faster and updates quicker.
 00-core
 10-shell
 20-dev
