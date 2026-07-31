@@ -1,0 +1,12 @@
+# desktop -- a normal PC, and nothing more.
+#
+# KDE Plasma on Wayland, a terminal worth using, and Firefox as a Flatpak.
+# No office suite, no mail client, no media player, no games: anything else
+# you want is `flatpak install`, which keeps it out of the base image.
+#
+# dnf is present (it is Fedora) but note it does NOT persist on a bootc host.
+# For an rpm with no Flatpak, use `rpm-ostree install` and reboot.
+00-core
+10-shell
+30-desktop-plasma
+40-flatpak

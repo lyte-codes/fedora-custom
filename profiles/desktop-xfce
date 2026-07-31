@@ -1,0 +1,8 @@
+# desktop-xfce -- same idea, lighter desktop.
+#
+# Xfce instead of Plasma. Smaller, but X11-first; Plasma is the better bet on
+# hardware bought in 2026. Swapping desktops is one line, which is the point.
+00-core
+10-shell
+30-desktop-xfce
+40-flatpak

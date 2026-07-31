@@ -15,7 +15,7 @@ on:
         description: 'Preset to build'
         default: 'normal'
         type: choice
-        options: [minimal, normal, max]
+        options: [minimal, normal, max, desktop, desktop-xfce]
       modules:
         description: 'Override the profile entirely (space separated, optional)'
         default: ''
