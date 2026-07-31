@@ -28,6 +28,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE: ${{ github.repository }}
+  # The one profile allowed to claim :latest. Change this if your daily driver
+  # stops being `normal` -- e.g. once there is a `desktop` profile.
+  CANONICAL_PROFILE: normal
 
 jobs:
   build:
@@ -59,15 +62,32 @@ jobs:
           echo "profile: $PROFILE"
           echo "modules: ${MODULES:-<from profile>}"
           echo "drivers: ${DRIVERS:-<none>}"
+          # Tagging rules matter more than they look.
+          #
+          # :latest is what a running machine upgrades against, so it must mean
+          # exactly one thing: the canonical daily-driver build. Tagging it
+          # unconditionally meant a one-off `max` build from the Actions button
+          # silently redefined what every PC would install on next reboot.
+          #
+          # So: every build gets its :<profile> tag. Only the canonical profile
+          # additionally claims :latest and the commit tag.
+          TAGS="-t ${REGISTRY}/${IMAGE,,}:${PROFILE}"
+          if [ "$PROFILE" = "$CANONICAL_PROFILE" ]; then
+            TAGS="$TAGS -t ${REGISTRY}/${IMAGE,,}:latest"
+            TAGS="$TAGS -t ${REGISTRY}/${IMAGE,,}:${GITHUB_SHA::7}"
+            echo "canonical profile -> also tagging :latest and :${GITHUB_SHA::7}"
+          else
+            echo "non-canonical profile -> tagging :${PROFILE} only, leaving :latest alone"
+          fi
+
           podman build \
             --build-arg PROFILE="$PROFILE" \
             --build-arg MODULES="$MODULES" \
             --build-arg DRIVERS="$DRIVERS" \
             --platform linux/amd64 \
-            -t "${REGISTRY}/${IMAGE,,}:latest" \
-            -t "${REGISTRY}/${IMAGE,,}:${PROFILE}" \
-            -t "${REGISTRY}/${IMAGE,,}:${GITHUB_SHA::7}" \
+            $TAGS \
             .
+          echo "TAGS=$TAGS" >> "$GITHUB_ENV"
 
       # Size is a feature here. Printing it every build makes a regression
       # visible in the log the day it happens, rather than the day you notice
@@ -84,8 +104,9 @@ jobs:
       - name: Push
         if: github.event_name != 'pull_request'
         run: |
-          PROFILE="${{ github.event.inputs.profile || 'normal' }}"
-          podman push "${REGISTRY}/${IMAGE,,}:latest"
-          podman push "${REGISTRY}/${IMAGE,,}:${PROFILE}"
-          podman push "${REGISTRY}/${IMAGE,,}:${GITHUB_SHA::7}"
-          echo "Pushed ${REGISTRY}/${IMAGE,,}:{latest,${PROFILE},${GITHUB_SHA::7}}"
+          # Push exactly the tags the build step decided on -- deriving them
+          # again here is how the two lists drift apart.
+          for t in $(echo "$TAGS" | tr ' ' '\n' | grep -v '^-t$' | grep .); do
+            podman push "$t"
+            echo "pushed $t"
+          done
