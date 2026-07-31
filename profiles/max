@@ -1,0 +1,7 @@
+# max -- everything in the repo. Every module, switched on.
+#
+# Not "the best one" -- the biggest one. If you are not going to compile
+# anything on this machine, `normal` boots faster and updates quicker.
+00-core
+10-shell
+20-dev

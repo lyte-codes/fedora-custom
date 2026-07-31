@@ -1,0 +1,91 @@
+name: Build custom Fedora
+
+# Built on GitHub's runners rather than locally because the target is x86_64
+# and every machine in this house is ARM. Emulating x86 turns a 20-minute build
+# into an overnight one; a runner does it natively for free.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Preset to build'
+        default: 'normal'
+        type: choice
+        options: [minimal, normal, max]
+      modules:
+        description: 'Override the profile entirely (space separated, optional)'
+        default: ''
+        type: string
+      drivers:
+        description: 'GPU drivers: amd, intel, nvidia, or empty for none'
+        default: ''
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest          # x86_64 -- the whole point
+    permissions:
+      contents: read
+      packages: write               # needed to push to ghcr.io
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Runners start with ~14GB free, and an OS image build will exhaust that
+      # partway through and fail with a confusing error. This reclaims ~20GB of
+      # preinstalled toolchains nothing here uses. Cheap insurance.
+      - name: Free up disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+          df -h /
+
+      - name: Build image
+        id: build
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'normal' }}"
+          MODULES="${{ github.event.inputs.modules || '' }}"
+          DRIVERS="${{ github.event.inputs.drivers || '' }}"
+          echo "profile: $PROFILE"
+          echo "modules: ${MODULES:-<from profile>}"
+          echo "drivers: ${DRIVERS:-<none>}"
+          podman build \
+            --build-arg PROFILE="$PROFILE" \
+            --build-arg MODULES="$MODULES" \
+            --build-arg DRIVERS="$DRIVERS" \
+            --platform linux/amd64 \
+            -t "${REGISTRY}/${IMAGE,,}:latest" \
+            -t "${REGISTRY}/${IMAGE,,}:${PROFILE}" \
+            -t "${REGISTRY}/${IMAGE,,}:${GITHUB_SHA::7}" \
+            .
+
+      # Size is a feature here. Printing it every build makes a regression
+      # visible in the log the day it happens, rather than the day you notice
+      # the ISO got fat.
+      - name: Report image size
+        run: podman images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | head -5
+
+      # Pull requests build but must not publish -- otherwise anyone opening a
+      # PR against this repo can push an image your PC would later install.
+      - name: Log in to ghcr.io
+        if: github.event_name != 'pull_request'
+        run: podman login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        if: github.event_name != 'pull_request'
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'normal' }}"
+          podman push "${REGISTRY}/${IMAGE,,}:latest"
+          podman push "${REGISTRY}/${IMAGE,,}:${PROFILE}"
+          podman push "${REGISTRY}/${IMAGE,,}:${GITHUB_SHA::7}"
+          echo "Pushed ${REGISTRY}/${IMAGE,,}:{latest,${PROFILE},${GITHUB_SHA::7}}"

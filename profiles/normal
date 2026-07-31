@@ -1,0 +1,4 @@
+# normal -- the daily driver. Everything in minimal, plus a terminal worth
+# using. This is the sensible default and what CI builds unless told otherwise.
+00-core
+10-shell

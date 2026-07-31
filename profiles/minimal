@@ -1,0 +1,4 @@
+# minimal -- the floor. A machine that boots, networks, and takes an ssh
+# connection. Nothing you would enjoy sitting in front of, and that is the
+# point: this is the base for an appliance or a server.
+00-core
