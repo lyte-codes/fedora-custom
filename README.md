@@ -49,10 +49,13 @@ podman build --build-arg MODULES="00-core 20-dev" .   # dev tools, no shell extr
 
 ```
 Containerfile                 base image, module + driver runner, cleanup
-profiles/minimal|normal|max   which modules each preset turns on
+profiles/                     which modules each preset turns on
 modules/00-core.sh            networking, ssh, journal limits — the floor
 modules/10-shell.sh           terminal tooling
-modules/20-dev.sh             containers + compilers (example; delete freely)
+modules/20-dev.sh             containers + compilers (headless profiles only)
+modules/30-desktop-xfce.sh    Xfce, Wayland-capable-ish, PipeWire, fonts
+modules/30-desktop-plasma.sh  KDE Plasma on Wayland — the alternative
+modules/40-flatpak.sh         Flatpak + first-boot app install + daily updates
 drivers/amd.sh                GPU userspace — see drivers/README.md
 drivers/intel.sh
 drivers/nvidia.sh             scaffold only; proprietary NVIDIA is the hard case
