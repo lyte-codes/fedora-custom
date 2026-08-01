@@ -13,21 +13,32 @@
 #   2. QT APPS DO NOT READ GTK THEMES. Kdenlive is Qt. Pointing Qt at the GTK
 #      theme via QT_QPA_PLATFORMTHEME is the closest thing to a fix.
 #
-#   3. GTK4 / LIBADWAITA APPS largely ignore custom themes by design. Nothing
-#      here changes that, and fighting it tends to produce broken-looking
-#      apps rather than themed ones. Dark preference is still respected,
-#      which is usually the part people actually care about.
+#   3. GTK4 / LIBADWAITA APPS largely ignore custom themes by design. Rather
+#      than fight that -- which produces broken-looking apps, not themed ones
+#      -- the theme chosen here sidesteps it: adw-gtk3 IS the libadwaita look
+#      ported back to GTK3. So GTK3 apps match GTK4 apps because both end up
+#      looking like Adwaita, instead of the usual mismatch.
 #
 set -euxo pipefail
 
 # Change these two lines to change the look. Everything below reads them.
-GTK_THEME="Adwaita-dark"
+GTK_THEME="adw-gtk3-dark"
 ICON_THEME="Papirus-Dark"
 
+# adw-gtk3-theme, not gnome-themes-extra: the latter is retired upstream and
+# has no f44 branch at all. It is what used to ship /usr/share/themes/Adwaita-dark,
+# which is why that theme name no longer resolves either.
+#
+# papirus-icon-theme-dark is named explicitly because the base package only
+# *Recommends* it -- and overlay/etc/dnf/dnf.conf sets install_weak_deps=False,
+# so recommendations are dropped. That setting is the whole no-bloat strategy;
+# the cost is that subpackages must be asked for by name.
+#
+# adwaita-cursor-theme is already in the bootc base -- not repeated here.
 dnf -y install \
-    gnome-themes-extra \
+    adw-gtk3-theme \
     papirus-icon-theme \
-    adwaita-cursor-theme
+    papirus-icon-theme-dark
 
 # --- 1. System-wide GTK3 default ---------------------------------------------
 # /etc is writable and preserved on a bootc system, so this is a real default
@@ -43,8 +54,9 @@ gtk-application-prefer-dark-theme=1
 gtk-font-name=Cantarell 11
 EOF
 
-# GTK4 reads a different file and ignores the one above. It will not honour a
-# custom theme, but it does honour the dark preference.
+# GTK4 reads a different file and ignores the one above. libadwaita apps will
+# not take a custom theme name, but they do honour the dark preference -- and
+# since adw-gtk3 is Adwaita's look anyway, they already match.
 install -d /etc/gtk-4.0
 cat > /etc/gtk-4.0/settings.ini <<EOF
 [Settings]

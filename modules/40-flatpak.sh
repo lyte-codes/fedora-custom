@@ -28,7 +28,7 @@ org.kde.kdenlive
 # installed on the host, so the theme has to exist inside their runtime too.
 # Without this, the host is dark and Firefox is light. Must match GTK_THEME
 # in modules/50-theme.sh.
-org.gtk.Gtk3theme.Adwaita-dark
+org.gtk.Gtk3theme.adw-gtk3-dark
 
 # Graphite (graphite.rs) is deliberately absent: it is a browser-based
 # editor, not a packaged app, so Firefox above already covers it. There is
