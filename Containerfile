@@ -12,22 +12,21 @@ FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION}
 
 # --- Modularity ---------------------------------------------------------------
 #
-# Each concern is one script in modules/. This arg picks which ones run and in
-# what order, so a variant is a different build command rather than a different
+# Each concern is one script in modules/; a profile in profiles/ names the set
+# to run. A variant is therefore a different build argument, not a different
 # Containerfile:
 #
-#   podman build --build-arg MODULES="00-core"                  -> bare server
-#   podman build --build-arg MODULES="00-core 10-shell"         -> daily driver
-#   podman build --build-arg MODULES="00-core 10-shell 20-dev"  -> workstation
+#   --build-arg PROFILE=desktop         Xfce + Firefox            (the default)
+#   --build-arg PROFILE=desktop-plasma  the same, with KDE Plasma
+#   --build-arg PROFILE=minimal         headless: boots, networks, takes ssh
+#   --build-arg PROFILE=normal          headless + a usable terminal
+#   --build-arg PROFILE=max             headless + compilers and containers
 #
-# Adding a capability means adding a file, never editing this one.
-# A named preset in profiles/. This is the normal way to build:
+# Turning an app off is deleting a line from a profile. Adding a capability is
+# adding a file to modules/. Neither should mean editing this file.
 #
-#   --build-arg PROFILE=minimal    boots, networks, takes ssh. Nothing else.
-#   --build-arg PROFILE=normal     + a terminal worth using   (the default)
-#   --build-arg PROFILE=max        + everything in modules/
-#
-# Turning an app off is deleting a line from a profile, not editing this file.
+# This default matches CI's, so a bare `podman build .` locally and a push to
+# main produce the same image. They disagreed once; it was confusing.
 ARG PROFILE="desktop"
 
 # Escape hatch: set MODULES to bypass the profile entirely for a one-off build.
