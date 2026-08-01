@@ -37,6 +37,15 @@ ACCENT_HOVER="#c084fc"    # lighter, for hover
 BG_BLACK="#0b0b0d"        # window/view background -- near-black, not #000
 BG_RAISED="#151519"       # headerbars, sidebars, cards
 
+# xfconf wants 0-1 doubles, not hex. These MUST match BG_BLACK above --
+# 0.043 = 11/255 = 0x0b, 0.051 = 13/255 = 0x0d. Change one, change both, or
+# the desktop backdrop drifts away from the window colours and nothing warns
+# you. Kept explicit rather than computed: no floating point in POSIX shell,
+# and awk/python are not guaranteed present in a minimal bootc base.
+BG_BLACK_R="0.043"
+BG_BLACK_G="0.043"
+BG_BLACK_B="0.051"
+
 # adw-gtk3-theme, not gnome-themes-extra: the latter is retired upstream and
 # has no f44 branch at all. It is what used to ship /usr/share/themes/Adwaita-dark,
 # which is why that theme name no longer resolves either.
@@ -56,7 +65,7 @@ dnf -y install \
 # /etc is writable and preserved on a bootc system, so this is a real default
 # rather than something a rebuild would stamp over. A user's own
 # ~/.config/gtk-3.0/settings.ini still wins, which is correct.
-install -d /etc/gtk-3.0
+install -d /etc/gtk-3.0 /etc/skel/.config/gtk-3.0
 cat > /etc/gtk-3.0/settings.ini <<EOF
 [Settings]
 gtk-theme-name=${GTK_THEME}
@@ -69,12 +78,18 @@ EOF
 # The purple. adw-gtk3 follows libadwaita's colour names, so redefining these
 # recolours the theme without forking it -- a theme update does not undo this.
 #
+# NOTE THE PATH. GTK does NOT read /etc/gtk-3.0/gtk.css: /etc/gtk-3.0 is a
+# search path for settings.ini only. GTK auto-loads ~/.config/gtk-3.0/gtk.css
+# and theme directories, nothing under /etc. Writing the CSS there produces a
+# passing build and an entirely inert purple layer. /etc/skel is copied into
+# each new user's home, which on a fresh install is everyone.
+#
 # LIMITATION, because it will look like a bug otherwise: this file is on the
 # host, and Flatpak apps cannot read it. Firefox and Kdenlive get the dark
 # adw-gtk3 base from the Flathub extension, but NOT these purple accents.
 # Style Firefox with a Firefox theme; Kdenlive picks colours up through
 # QT_QPA_PLATFORMTHEME below.
-cat > /etc/gtk-3.0/gtk.css <<EOF
+cat > /etc/skel/.config/gtk-3.0/gtk.css <<EOF
 @define-color accent_color ${ACCENT};
 @define-color accent_bg_color ${ACCENT};
 @define-color accent_fg_color #ffffff;
@@ -99,7 +114,7 @@ EOF
 # GTK4 reads a different file and ignores the one above. libadwaita apps will
 # not take a custom theme name, but they do honour the dark preference -- and
 # since adw-gtk3 is Adwaita's look anyway, they already match.
-install -d /etc/gtk-4.0
+install -d /etc/gtk-4.0 /etc/skel/.config/gtk-4.0
 cat > /etc/gtk-4.0/settings.ini <<EOF
 [Settings]
 gtk-icon-theme-name=${ICON_THEME}
@@ -109,7 +124,7 @@ EOF
 
 # libadwaita ignores theme NAMES but does honour these colour definitions,
 # so GTK4 apps get the same purple as GTK3 ones.
-cat > /etc/gtk-4.0/gtk.css <<EOF
+cat > /etc/skel/.config/gtk-4.0/gtk.css <<EOF
 @define-color accent_color ${ACCENT};
 @define-color accent_bg_color ${ACCENT};
 @define-color accent_fg_color #ffffff;
@@ -150,24 +165,11 @@ cat > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml <<EOF
 </channel>
 EOF
 
-# Xfce panel: black, no gradient, so it reads as one surface with the windows.
-cat > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<channel name="xfce4-panel" version="1.0">
-  <property name="panels" type="array">
-    <value type="int" value="1"/>
-    <property name="panel-1" type="empty">
-      <property name="background-style" type="uint" value="1"/>
-      <property name="background-rgba" type="array">
-        <value type="double" value="0.043"/>
-        <value type="double" value="0.043"/>
-        <value type="double" value="0.051"/>
-        <value type="double" value="1.0"/>
-      </property>
-    </property>
-  </property>
-</channel>
-EOF
+# NOT setting xfce4-panel.xml on purpose. That file is the system default
+# panel layout, and a `panels` array without plugin definitions replaces the
+# packaged default rather than restyling it -- giving a new user a black bar
+# with no clock, menu or systray. The panel follows the GTK theme's background
+# by default, which is already dark, so there is nothing to gain by risking it.
 
 # Desktop background: flat black rather than the Fedora wallpaper. Solid
 # colour also means no wallpaper file to ship in the image.
@@ -181,9 +183,9 @@ cat > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml <<EOF
           <property name="color-style" type="int" value="0"/>
           <property name="image-style" type="int" value="0"/>
           <property name="rgba1" type="array">
-            <value type="double" value="0.043"/>
-            <value type="double" value="0.043"/>
-            <value type="double" value="0.051"/>
+            <value type="double" value="${BG_BLACK_R}"/>
+            <value type="double" value="${BG_BLACK_G}"/>
+            <value type="double" value="${BG_BLACK_B}"/>
             <value type="double" value="1.0"/>
           </property>
         </property>
