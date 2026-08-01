@@ -28,7 +28,7 @@ FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION}
 #   --build-arg PROFILE=max        + everything in modules/
 #
 # Turning an app off is deleting a line from a profile, not editing this file.
-ARG PROFILE="normal"
+ARG PROFILE="desktop"
 
 # Escape hatch: set MODULES to bypass the profile entirely for a one-off build.
 # Empty means "use the profile", which is what you want almost always.
