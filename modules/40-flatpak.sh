@@ -22,6 +22,11 @@ install -d /usr/share/fedora-custom
 cat > /usr/share/fedora-custom/flatpaks.list <<'EOF'
 # One Flathub application ID per line. Comments and blanks ignored.
 org.mozilla.firefox
+org.kde.kdenlive
+
+# Graphite (graphite.rs) is deliberately absent: it is a browser-based
+# editor, not a packaged app, so Firefox above already covers it. There is
+# no Flathub entry -- every plausible app ID 404s.
 EOF
 
 install -d /usr/libexec
