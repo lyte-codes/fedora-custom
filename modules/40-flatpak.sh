@@ -24,6 +24,12 @@ cat > /usr/share/fedora-custom/flatpaks.list <<'EOF'
 org.mozilla.firefox
 org.kde.kdenlive
 
+# GTK theme extension. Flatpak apps are sandboxed and cannot see themes
+# installed on the host, so the theme has to exist inside their runtime too.
+# Without this, the host is dark and Firefox is light. Must match GTK_THEME
+# in modules/50-theme.sh.
+org.gtk.Gtk3theme.Adwaita-dark
+
 # Graphite (graphite.rs) is deliberately absent: it is a browser-based
 # editor, not a packaged app, so Firefox above already covers it. There is
 # no Flathub entry -- every plausible app ID 404s.

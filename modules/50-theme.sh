@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# 50-theme -- one look, applied as widely as it actually can be.
+#
+# "Set a GTK theme and every app follows" is true of about two thirds of a
+# real desktop. Three things break it, and this module handles each:
+#
+#   1. FLATPAK APPS ARE SANDBOXED and cannot see host themes at all. A theme
+#      installed to /usr/share/themes is invisible to Firefox and Kdenlive.
+#      They need the theme as a Flatpak *extension* -- see the note at the
+#      bottom, and the matching entry added to 40-flatpak.sh's list.
+#
+#   2. QT APPS DO NOT READ GTK THEMES. Kdenlive is Qt. Pointing Qt at the GTK
+#      theme via QT_QPA_PLATFORMTHEME is the closest thing to a fix.
+#
+#   3. GTK4 / LIBADWAITA APPS largely ignore custom themes by design. Nothing
+#      here changes that, and fighting it tends to produce broken-looking
+#      apps rather than themed ones. Dark preference is still respected,
+#      which is usually the part people actually care about.
+#
+set -euxo pipefail
+
+# Change these two lines to change the look. Everything below reads them.
+GTK_THEME="Adwaita-dark"
+ICON_THEME="Papirus-Dark"
+
+dnf -y install \
+    gnome-themes-extra \
+    papirus-icon-theme \
+    adwaita-cursor-theme
+
+# --- 1. System-wide GTK3 default ---------------------------------------------
+# /etc is writable and preserved on a bootc system, so this is a real default
+# rather than something a rebuild would stamp over. A user's own
+# ~/.config/gtk-3.0/settings.ini still wins, which is correct.
+install -d /etc/gtk-3.0
+cat > /etc/gtk-3.0/settings.ini <<EOF
+[Settings]
+gtk-theme-name=${GTK_THEME}
+gtk-icon-theme-name=${ICON_THEME}
+gtk-cursor-theme-name=Adwaita
+gtk-application-prefer-dark-theme=1
+gtk-font-name=Cantarell 11
+EOF
+
+# GTK4 reads a different file and ignores the one above. It will not honour a
+# custom theme, but it does honour the dark preference.
+install -d /etc/gtk-4.0
+cat > /etc/gtk-4.0/settings.ini <<EOF
+[Settings]
+gtk-icon-theme-name=${ICON_THEME}
+gtk-cursor-theme-name=Adwaita
+gtk-application-prefer-dark-theme=1
+EOF
+
+# --- 2. Xfce's own settings daemon -------------------------------------------
+# Xfce does not read /etc/gtk-3.0/settings.ini for its own chrome -- xfsettingsd
+# owns that, and reads xfconf. This is the system default channel; a user
+# changing it in Appearance writes to their own profile and takes precedence.
+install -d /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
+cat > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="ThemeName" type="string" value="${GTK_THEME}"/>
+    <property name="IconThemeName" type="string" value="${ICON_THEME}"/>
+  </property>
+  <property name="Gtk" type="empty">
+    <property name="CursorThemeName" type="string" value="Adwaita"/>
+    <property name="FontName" type="string" value="Cantarell 11"/>
+  </property>
+</channel>
+EOF
+
+# Window decorations are xfwm4's, not GTK's, and are themed separately.
+cat > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="theme" type="string" value="Default-hdpi"/>
+  </property>
+</channel>
+EOF
+
+# --- 3. Qt apps (Kdenlive) ---------------------------------------------------
+# Qt reads none of the above. QT_QPA_PLATFORMTHEME=gtk3 makes Qt apps pick up
+# GTK colours and the GTK file dialog, which is the difference between
+# Kdenlive looking like it belongs and looking like it was airlifted in.
+#
+# /etc/environment is read by PAM at login, so this reaches graphical sessions
+# rather than only shells.
+if ! grep -q '^QT_QPA_PLATFORMTHEME=' /etc/environment 2>/dev/null; then
+    echo 'QT_QPA_PLATFORMTHEME=gtk3' >> /etc/environment
+fi
+
+# --- Note on Flatpak ---------------------------------------------------------
+# Nothing above reaches a Flatpak app. Flatpaks read themes from their own
+# runtime, so the theme has to exist there too -- installed as
+# org.gtk.Gtk3theme.<Name> from Flathub. 40-flatpak.sh's list carries the
+# matching entry; if you change GTK_THEME above, change that entry to match or
+# your host and your apps will disagree.
